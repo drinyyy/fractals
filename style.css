@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Italiana&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Macondo&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Macondo&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Macondo&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Quicksand:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Roboto:700');
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none; /* Prevent text selection */
+  -webkit-user-drag: none; /* Prevent dragging elements in Safari */
+  touch-action: none; /* Prevent default touch actions like scrolling */
+
+  
+}
+html{
+  font-size: 16px;
+}
+.experience{
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+}
+
+.experience-canvas{
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+
+}
+#intro-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #DEDEDE;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  font-family: 'FontIntro', sans-serif;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+
+
+
+#loading-percentage {
+  font-size: 1.5rem;
+  overflow: hidden;
+  color: rgb(255, 255, 255);
+}
+
+h1 {
+  font-family: "Inter", serif;
+  font-weight: 300;
+  letter-spacing: 3px;
+  color: rgb(255, 255, 255);
+  font-size: 3em;
+  margin-bottom: 1.5em;
+}
+
+#description {
+  font-family: "Inter", serif;
+  font-size: 1.2rem;
+  margin-bottom: 7rem;
+  font-weight: 200;
+  letter-spacing: 3px;
+  opacity: 1;
+  transform: translateY(20px);
+  overflow: hidden;
+  color: rgb(255, 255, 255);
+}
+
+
+
+
+.wrapper-contact {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Align items to the bottom */
+  align-items: flex-start; /* Align items to the left */
+  font-size: .7rem;
+  text-transform: uppercase;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  position: fixed; /* Fix the position */
+  bottom: 0; /* Align to the bottom */
+  left: 0; /* Align to the left */
+}
+
+.container{
+display: flex;
+  z-index: 10;
+  width: 100%;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.about{
+max-width: 300px;
+color: rgb(255, 255, 255);
+text-decoration: none;
+list-style: none;
+}
+.about ul{
+text-decoration: none;
+list-style: none;
+padding: 0;
+
+}
+
+.about li a{
+color: rgb(117, 117, 117);
+text-decoration: none;
+list-style: none;
+transition: all 0.5s;
+
+}
+.about li a:hover{
+color: rgb(85, 85, 85);
+
+}
