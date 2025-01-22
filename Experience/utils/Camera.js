@@ -26,7 +26,7 @@ export default class Camera {
         );
         // this.lookAtTarget.set(0, 1.3, 0); // Initial lookAt target
 
-        console.log(this.frustum)
+        
         
         
         this.scene.add(this.orthographicCamera);

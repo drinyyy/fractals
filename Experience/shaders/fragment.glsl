@@ -1,191 +1,193 @@
 uniform float time;
-uniform float progress;
-uniform vec2 mouse;
-uniform sampler2D matcap,matcap1;
-uniform vec4 resolution;
+uniform vec2 resolution;
 varying vec2 vUv;
-float PI = 3.141592653589;
+uniform float value11, rChannel,gChannel,bChannel, rChannel2,gChannel2,bChannel2,value1,value2,value3;
+
+#define MAX_STEPS 48 
+#define MIN_DIST 10.0
+#define MAX_DIST 15.0
+#define POWER value11
+
+float pixel_size;
+precision highp float; 
 
 
-mat4 rotationMatrix(vec3 axis, float angle) {
-    axis = normalize(axis);
-    float s = sin(angle);
-    float c = cos(angle);
-    float oc = 1.0 - c;
-    
-    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
-                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-                0.0,                                0.0,                                0.0,                                1.0);
-}
-vec2 getmatcap(vec3 eye, vec3 normal) {
-  vec3 reflected = reflect(eye, normal);
-  float m = 2.8284271247461903 * sqrt( reflected.z+1.0 );
-  return reflected.xy / m + 0.5;
-}
-
-vec3 rotate(vec3 v, vec3 axis, float angle) {
-	mat4 m = rotationMatrix(axis, angle);
-	return (m * vec4(v, 1.0)).xyz;
-}
-
-
-
-
-float smin( float a, float b, float k )
-{
-    k *= 4.0;
-    float h = max( k-abs(a-b), 0.0 )/k;
-    return min(a,b) - h*h*k*(1.0/4.0);
-}
-
-vec2 smin2( float a, float b, float k )
-{
-    float h = 1.0 - min( abs(a-b)/(4.0*k), 1.0 );
-    float w = h*h;
-    float m = w*0.5;
-    float s = w*k;
-    return (a<b) ? vec2(a-s,m) : vec2(b-s,1.0-m);
-}
-float sdSphere( vec3 p, float r )
-{
-  return length(p)-r;
-}
-
-
-float sdBox( vec3 p, vec3 b )
-{
-  vec3 q = abs(p) - b;
-  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
-}
-
-float sdTorus( vec3 p, vec2 t )
-{
-  vec2 q = vec2(length(p.xz)-t.x,p.y);
-  return length(q)-t.y;
-}
-
-float sdf(vec3 p) {
-    vec3 pi = rotate(p, vec3(0.0, 1.0, 1.0), time );
-    vec3 pi2 = rotate(p, vec3(1.0, 1.0, 0.0), time );
-    vec3 pi3 = rotate(p, vec3(1.0, 0.0, 0.0), time );
-
-    vec3 boxPosition = vec3(0.0, 0.0, 0.0); 
-    float box = sdBox(pi - boxPosition, vec3(0.005, 0.7, 0.005));
-    float box2 = sdBox(pi2 - boxPosition, vec3(0.005, 0.7, 0.005));
-    float box3 = sdBox(pi3 - boxPosition, vec3(0.005, 0.7, 0.005));
-    
-    float torus = sdTorus(pi - boxPosition, vec2(0.8, 0.02)); // Corrected dimensions for the torus
-    float torus2 = sdTorus(pi2 - boxPosition, vec2(0.8, 0.02)); // Corrected dimensions for the torus
-    // Sphere
-    float sphere = sdSphere(p - vec3(mouse*resolution.zw*2.0, 0.0), 0.12);
-    
-    // Blend boxes together first
-    vec2 boxBlend1 = smin2(box, box2, 0.05);
-    vec2 boxBlend2 = smin2(boxBlend1.x, box3, 0.05);
-    
-    vec2 tourusBlend1 = smin2(torus, torus2, 0.08);
-    
-
-    // Blend torus with the boxes
-    vec2 torusBlend = smin2(boxBlend2.x, tourusBlend1.x, 0.09);
-    
-    // Blend the sphere with the result
-    vec2 finalBlend = smin2(torusBlend.x, sphere, 0.1);
-    
-    // Return the final distance
-    return finalBlend.x;
-}
-
-
-float isSphere(vec3 p) {
-    vec3 pi = rotate(p, vec3(0.0, 1.0, 1.0), time );
-    
-    // Calculate distances
-    float boxDist = min(min(
-        sdBox(pi - vec3(0.0), vec3(0.01, 0.5, 0.01)),
-        sdBox(rotate(p, vec3(1.0, 1.0, 0.0), time ) - vec3(0.0), vec3(0.01, 0.5, 0.01))),
-        sdBox(rotate(p, vec3(1.0, 0.0, 0.0), time ) - vec3(0.0), vec3(0.01, 0.5, 0.01))
+mat3 rotateY(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return mat3(
+        vec3(c, 0, s),
+        vec3(0, 1, 0),
+        vec3(-s, 0, c)
     );
-    
-    float sphereDist = sdSphere(pi - vec3(0.1*resolution.zw*2.0, 0.0), 0.12);
-    
-    // Return 1.0 if closer to sphere, 0.0 if closer to boxes
-    return step(sphereDist, boxDist);
 }
 
-vec2 sdfWithMaterial(vec3 p) {
-    vec3 pi = rotate(p, vec3(0.0, 1.0, 1.0), time);
-    vec3 pi2 = rotate(p, vec3(1.0, 1.0, 0.0), time);
-    vec3 pi3 = rotate(p, vec3(1.0, 0.0, 0.0), time);
-
-    vec3 boxPosition = vec3(0.0, 0.0, 0.0); 
-    float box = sdBox(pi - boxPosition, vec3(0.01, 0.5, 0.01));
-    float box2 = sdBox(pi2 - boxPosition, vec3(0.01, 0.5, 0.01));
-    float box3 = sdBox(pi3 - boxPosition, vec3(0.01, 0.5, 0.01));
+vec3 mandelbulbDE(vec3 p) {
+    p *= 0.5;
+    vec3 z = p;
+    float dr = 0.5;
+    float r = 0.4;
+    float power = POWER;
+    float power_minus_1 = power - 1.0; 
+    float minRadius = 1000.0;
     
-    float torus = sdTorus(pi - boxPosition, vec2(0.8, 0.02));
-    float torus2 = sdTorus(pi2 - boxPosition, vec2(0.8, 0.02));
-    float sphere = sdSphere(p - vec3(mouse*resolution.zw*2.0, 0.0), 0.12);
-    
-    // Blend boxes together
-    vec2 boxBlend1 = smin2(box, box2, 0.08);
-    vec2 boxBlend2 = smin2(boxBlend1.x, box3, 0.08);
-    
-    // Blend torus and sphere
-    vec2 torusBlend = smin2(torus, torus2, 0.08);
-    vec2 torusSphereBlend = smin2(torusBlend.x, sphere, 0.25);
-    
-    // Final blend between box group and torus/sphere group
-    vec2 finalBlend = smin2(boxBlend2.x, torusSphereBlend.x, 0.1);
-    
-    // Compute material blend factor
-    float materialBlend = smoothstep(-0.1, 0.1, boxBlend2.x - torusSphereBlend.x);
-    
-    return vec2(finalBlend.x, materialBlend);
-}
-vec3 calcNormal( in vec3 p ) // for function f(p)
-{
-    const float eps = 0.0001; // or some other value
-    const vec2 h = vec2(eps,0);
-    return normalize( vec3(sdf(p+h.xyy) - sdf(p-h.xyy),
-                           sdf(p+h.yxy) - sdf(p-h.yxy),
-                           sdf(p+h.yyx) - sdf(p-h.yyx) ) );
-}
-void main() {
-    float dist = length(vUv - vec2(0.5));
-    vec3 bg = mix(vec3(1.0), vec3(0.6), dist);
-    vec2 newUV = (vUv - vec2(0.5))*resolution.zw + vec2(0.5);
-    vec3 camPos = vec3(0.0, 0.0, 2.0);
-    vec3 ray = normalize(vec3((vUv-vec2(0.5)) *resolution.zw , -1));
-
-    vec3 rayPos = camPos;
-    float t = 0.0;
-    float tMax = 5.0;
-
-    for(int i = 0; i < 256; ++i){
-        vec3 pos = camPos + t*ray;
-        float h = sdf(pos);
-        if (h < 0.0001 || t>tMax) break;
-        t+=h;
-    }
-
-    vec3 color = bg;
-    if (t < tMax) {
-        vec3 pos = camPos + t*ray;
-        vec3 normal = calcNormal(pos);
-        vec2 matcapUV = getmatcap(ray, normal);
-        vec2 materialInfo = sdfWithMaterial(pos);
+    for (int i = 0; i < 8; i++) {
+        r = length(z);
+        if (r > 2.0) continue;
         
-        vec3 objectColor = mix(
-            texture2D(matcap1, matcapUV).rgb,  // torus and sphere
-            texture2D(matcap, matcapUV).rgb,   // boxes
-            materialInfo.y
+        
+        float r_pow = pow(r, power_minus_1);
+        dr = r_pow * power * dr + 1.0;
+        float zr = r_pow * r; 
+        
+        float theta = acos(z.z/r);
+        float phi = atan(z.y, z.x);
+        
+        theta *= power;
+        phi *= power;
+        
+        z = zr * vec3(
+            sin(theta) * cos(phi),
+            sin(theta) * sin(phi),
+            cos(theta)
         );
+        z += p;
+        
+        minRadius = min(minRadius, r);
+    }
+    return vec3(0.5 * log(r) * r / dr, minRadius, 0.0);
+}
+float softshadow(vec3 ro, vec3 rd, float k) {
+    float res = 1.0;
+    float t = 0.02; 
+    for(int i = 0; i < 8; i++) { 
+        float h = mandelbulbDE(ro + rd * t).x;
+        if(h < 0.001) return 0.02;
+        res = min(res, k * h / t);
+        t += h * 0.8 + 0.02; 
+    }
+    return res;
+}
 
-        float fresnel = pow(1.0 + dot(ray,normal), 0.5);
-        color = mix(objectColor, bg, fresnel);
+vec3 calcNormal(vec3 p) {
+    const vec2 e = vec2(0.0015, 0.0);
+    return normalize(vec3(
+        mandelbulbDE(p + e.xyy).x - mandelbulbDE(p - e.xyy).x,
+        mandelbulbDE(p + e.yxy).x - mandelbulbDE(p - e.yxy).x,
+        mandelbulbDE(p + e.yyx).x - mandelbulbDE(p - e.yyx).x
+    ));
+}
+vec3 intersect(vec3 ro, vec3 rd) {
+    float t = 1.0;
+    float res_t = 0.0;
+    float max_error = 50.0;
+    float d = 1.0;
+    float pd = 2.0;
+    float os = 0.0;
+    float step = 0.0;
+    float error = 1000.0;
+    vec3 c, res_c;
+    
+    for(int i = 0; i < MAX_STEPS; i++) {
+        if(error < pixel_size * 0.5 || t > MAX_DIST) {
+            break;
+        }
+        
+        c = mandelbulbDE(ro + rd * t);
+        d = c.x;
+
+        if(d > os) {
+            os = 0.4 * d * d / pd;
+            step = d + os;
+            pd = d;
+        } else {
+            step = -os;
+            os = 0.0;
+            pd = 5.0;
+            d = 1.0;
+        }
+
+        error = d / t;
+        
+        if(error < max_error) {
+            max_error = error;
+            res_t = t;
+            res_c = c;
+        }
+        
+        t += step;
     }
     
-    gl_FragColor = vec4(color, 1.0);
+    if(t > MAX_DIST) res_t = -1.0;
+    return vec3(res_t, res_c.y, res_c.z);
 }
+
+vec3 render(vec3 ro, vec3 rd) {
+    vec3 col = vec3(0.0);
+    vec3 res = intersect(ro, rd);
+    
+    if(res.x > 0.0) {
+        
+        vec3 pos = ro + res.x * rd;
+        vec3 normal = calcNormal(pos);
+        
+      float fresnel = pow(1.0 - max(0.0, dot(normal, -rd)), 5.0);
+    col = mix(col, vec3(0.0), fresnel);
+        vec3 sundir = normalize(vec3(0.1, 0.8, 0.6));
+        vec3 sun = vec3(1.64, 1.27, 0.99);
+        vec3 skycolor = vec3(0.6, 1.5, 1.0);
+        
+        float shadow = softshadow(pos, sundir, 3.0);
+        float dif = max(0.0, dot(normal, sundir));
+        float sky = 0.6 + 0.4 * max(0.0, dot(normal, vec3(0.0, 0.0, 0.0)));
+        float bac = max(0.3 + 0.7 * dot(vec3(-sundir.x, -1.0, -sundir.z), normal), 0.0);
+        float spe = max(0.0, pow(clamp(dot(sundir, reflect(rd, normal)), 0.0, 1.0), 2.0));
+        
+        vec3 lin = 1.1 * sun * dif * shadow;
+        lin += 1.0 * bac * sun;
+        lin += 5.0 * sky * skycolor * shadow;
+     
+        
+     
+        res.y = pow(clamp(res.y, 0.0, 1.0), 0.55);
+       float colorOffset = length(pos) * 1.1 + time *0.5;
+vec3 baseColor = 0.5 + 0.5 * sin(vec3(rChannel, gChannel, bChannel) + colorOffset * 5.2);
+        
+        col = lin * vec3(rChannel2,gChannel2,bChannel2) * 0.2 * baseColor;
+        col = mix(col, skycolor * 0.5, 1.0 - exp(-0.001 * res.x * res.x));
+    } else {
+        float y = rd.y * 0.5 + 0.5;
+        col = mix(vec3(0.0), vec3(0.0, 0.0, 0.0), y);
+    }
+    
+    col = pow(col, vec3(0.55));
+    col = col * 0.2 + 0.4 * col * col * (3.0 - 2.0 * col);
+    col = mix(col, vec3(dot(col, vec3(0.45))), -0.5);
+    
+    return col;
+}
+
+void main() {
+    float pixel_size = 2.0/(resolution.x * 3.0); 
+    
+    vec2 uv = (vUv - 0.5) * 2.0;
+    uv.x *= resolution.x/resolution.y;
+    
+    float camTime = time * 0.4;
+    float dist = 2.0;
+    vec3 ro = vec3(dist * sin(camTime), 5.5, dist * cos(camTime));
+    vec3 ta = vec3(0.0);
+    
+    vec3 ww = normalize(ta - ro);
+    vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
+    vec3 vv = normalize(cross(uu, ww));
+    vec3 rd = normalize(uv.x * uu + uv.y * vv + 2.0 * ww);
+    
+    vec3 col = render(ro, rd);
+    
+    vec2 q = vUv;
+    col *= 0.5 + 0.5 * pow(16.0 * q.x * q.y * (1.0 - q.x) * (1.0 - q.y), 0.7);
+    
+    gl_FragColor = vec4(col, 1.0);
+}
+
