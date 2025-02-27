@@ -23,7 +23,7 @@ export default class Experience {
         this.world = new World();
         this.renderer = new Renderer();
         
-        this.scene.background = new THREE.Color(0x000000);
+        this.scene.background = new THREE.Color(0xfffffff);
         
        
 

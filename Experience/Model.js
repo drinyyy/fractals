@@ -110,8 +110,8 @@ folder2.add(this.material.uniforms.bChannel2, 'value', 0, 1, 0.01)
              
 
                    
-    this.material.uniforms.value11.value =1.0;
-        this.isHighValue = false;
+    this.material.uniforms.value11.value =8.0;
+        this.isHighValue = true;
         this.currentTween = null;
 
         const button = document.querySelector('button');

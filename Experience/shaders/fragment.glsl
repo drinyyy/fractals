@@ -129,40 +129,54 @@ vec3 render(vec3 ro, vec3 rd) {
     if(res.x > 0.0) {
         
         vec3 pos = ro + res.x * rd;
-        vec3 normal = calcNormal(pos);
-        
-      float fresnel = pow(1.0 - max(0.0, dot(normal, -rd)), 5.0);
-    col = mix(col, vec3(0.0), fresnel);
-        vec3 sundir = normalize(vec3(0.1, 0.8, 0.6));
-        vec3 sun = vec3(1.64, 1.27, 0.99);
-        vec3 skycolor = vec3(0.6, 1.5, 1.0);
-        
-        float shadow = softshadow(pos, sundir, 3.0);
-        float dif = max(0.0, dot(normal, sundir));
-        float sky = 0.6 + 0.4 * max(0.0, dot(normal, vec3(0.0, 0.0, 0.0)));
-        float bac = max(0.3 + 0.7 * dot(vec3(-sundir.x, -1.0, -sundir.z), normal), 0.0);
-        float spe = max(0.0, pow(clamp(dot(sundir, reflect(rd, normal)), 0.0, 1.0), 2.0));
-        
-        vec3 lin = 1.1 * sun * dif * shadow;
-        lin += 1.0 * bac * sun;
-        lin += 5.0 * sky * skycolor * shadow;
-     
-        
-     
-        res.y = pow(clamp(res.y, 0.0, 1.0), 0.55);
-       float colorOffset = length(pos) * 1.1 + time *0.5;
+vec3 normal = calcNormal(pos);
+
+// Compute Fresnel using a meaningful exponent
+float fresnel = pow(1.0 - max(0.0, dot(normal, -rd)), 2.5);
+
+// Use smoothstep to further soften the transition
+fresnel = smoothstep(0.0, 1.0, fresnel * 0.8);
+
+// Define a softer rim color (e.g., a light blue glow)
+vec3 rimColor = mix(vec3(1.0), vec3(0.5, 0.8, 1.2), 0.6); 
+
+// Blend rim effect more softly
+
+
+// Compute your lighting color as usual
+vec3 sundir = normalize(vec3(0.1, 0.8, 0.6));
+vec3 sun = vec3(1.64, 1.27, 0.99);
+vec3 skycolor = vec3(0.6, 1.5, 1.0);
+
+float shadow = softshadow(pos, sundir, 3.0);
+float dif = max(0.0, dot(normal, sundir));
+float sky = 0.6 + 0.4 * max(0.0, dot(normal, vec3(0.0, 0.0, 0.0)));
+float bac = max(0.9 + 0.7 * dot(vec3(-sundir.x, -1.0, -sundir.z), normal), 0.0);
+
+vec3 lin = 1.1 * sun * dif * shadow;
+lin += 1.0 * bac * sun;
+lin += 5.0 * sky * skycolor * shadow;
+
+// Calculate base color
+float colorOffset = length(pos) * 1.1 + time * 0.5;
 vec3 baseColor = 0.5 + 0.5 * sin(vec3(rChannel, gChannel, bChannel) + colorOffset * 5.2);
-        
-        col = lin * vec3(rChannel2,gChannel2,bChannel2) * 0.2 * baseColor;
-        col = mix(col, skycolor * 0.5, 1.0 - exp(-0.001 * res.x * res.x));
+vec3 litColor = lin * vec3(rChannel2, gChannel2, bChannel2) * 0.2 * baseColor;
+
+// Now blend in the Fresnel effect (e.g., using white for the rim highlight)
+vec3 fresnelColor = vec3(0.2); // Adjust to desired rim color
+col = mix(litColor, rimColor, fresnel * 0.05); 
+
+// Finally, blend with the sky color if needed
+col = mix(col, skycolor * 0.5, 1.0 - exp(-0.001 * res.x * res.x));
+
     } else {
         float y = rd.y * 0.5 + 0.5;
-        col = mix(vec3(0.0), vec3(0.0, 0.0, 0.0), y);
+        col = mix(vec3(1.0), vec3(1.0, 1.0, 1.0), y);
     }
     
     col = pow(col, vec3(0.55));
-    col = col * 0.2 + 0.4 * col * col * (3.0 - 2.0 * col);
-    col = mix(col, vec3(dot(col, vec3(0.45))), -0.5);
+    col = col * 0.3 + 0.5 * col * col * (3.0 - 2.0 * col);
+    col = mix(col, vec3(dot(col, vec3(0.25))), -0.5);
     
     return col;
 }

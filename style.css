@@ -122,14 +122,14 @@ padding: 0;
 }
 
 .about li a{
-color: rgb(117, 117, 117);
+color: rgb(34, 34, 34);
 text-decoration: none;
 list-style: none;
 transition: all 0.5s;
 
 }
 .about li a:hover{
-color: rgb(85, 85, 85);
+color: rgb(12, 12, 12);
 
 }
 
